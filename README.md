@@ -9,26 +9,14 @@ Public Claude Code plugins for Octopus Deploy integrations, providing comprehens
 
 ## Installation
 
-### 1. Add Marketplace
-
-Add this marketplace to your Claude Code configuration:
-
-```json
-{
-  "pluginMarketplaces": [
-    "https://github.com/OctopusDeploy/claude-code-plugins-public"
-  ]
-}
-```
-
-### 2. Install Plugin
+### 1. Add Marketplace and Install Plugin
 
 ```bash
 /plugin marketplace add https://github.com/OctopusDeploy/claude-code-plugins-public
 /plugin install octopus-deploy-devops
 ```
 
-### 3. Configure Environment Variables
+### 2. Configure Environment Variables
 
 The plugin requires these environment variables to be configured:
 
