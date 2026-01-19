@@ -1,4 +1,14 @@
 {
-  "name": "Octopus Deploy Public Plugins",
-  "description": "Public Claude Code plugins for Octopus Deploy"
+  "name": "octopus-deploy-public-plugins",
+  "description": "Public Claude Code plugins for Octopus Deploy",
+  "owner": {
+    "name": "Octopus Deploy"
+  },
+  "plugins": [
+    {
+      "name": "octopus-deploy-devops",
+      "source": "./octopus-deploy-plugin",
+      "description": "Octopus Deploy DevOps plugin for managing deployments, releases, tenants, and infrastructure."
+    }
+  ]
 }
