@@ -168,6 +168,11 @@ If the MCP server fails to connect:
    npx -y @octopusdeploy/mcp-server --help
    ```
 
+## Planned Features
+
+- **Octopus CLI Integration**: Support for write operations using the `octopus` CLI to create, modify, and delete resources on Octopus Server
+- **OCL Skill**: Work with Git-versioned deployment processes and runbooks using Octopus Configuration Language
+
 ## Contributing
 
 Contributions are welcome! To add new skills or improve existing ones:
