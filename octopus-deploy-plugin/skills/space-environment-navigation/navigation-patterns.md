@@ -12,7 +12,7 @@ First step when exploring an Octopus instance:
 4. Understand space organization
 
 **Common Space Patterns:**
-- Environment-based: `Production Space`, `Development Space`
+- Environment-based: `Team A Space`, `Development Space`
 - Team-based: `Platform Team`, `Product Team`
 - Service-based: `E-commerce`, `Internal Tools`
 
