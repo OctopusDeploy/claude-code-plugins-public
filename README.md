@@ -20,9 +20,16 @@ Public Claude Code plugins for Octopus Deploy integrations, providing comprehens
 
 The plugin requires these environment variables to be configured:
 
+**Unix/Mac (bash/zsh):**
 ```bash
 export OCTOPUS_SERVER_URL="https://your-instance.octopus.app"
 export OCTOPUS_API_KEY="API-XXXXXXXXXXXXX"
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:OCTOPUS_SERVER_URL = "https://your-instance.octopus.app"
+$env:OCTOPUS_API_KEY = "API-XXXXXXXXXXXXX"
 ```
 
 ## Skills Overview
