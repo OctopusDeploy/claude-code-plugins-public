@@ -1,0 +1,8 @@
+{
+  "name": "octopus-deploy-devops",
+  "description": "Octopus Deploy DevOps plugin for managing deployments, releases, tenants, and infrastructure.",
+  "version": "0.0.1",
+  "author": {
+    "name": "Octopus Deploy"
+  }
+}
