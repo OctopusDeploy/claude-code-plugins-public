@@ -1,5 +1,9 @@
 # Octopus Deploy Claude Code Plugins
 
+## Note
+
+The skills in this repository have not been tested. This was a short spike. This repository will be kept internal until we come up with a proven skill that is worth sharing. The AI Foundations team doesn't have short term plans for this at the moment.
+
 Public Claude Code plugins for Octopus Deploy integrations, providing comprehensive skills and MCP integration for operations tasks.
 
 ## Features
