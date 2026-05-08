@@ -1,0 +1,43 @@
+step "deploy-web" {
+    name = "Deploy Web"
+    properties = {
+        Octopus.Action.TargetRoles = "web-server"
+    }
+
+    action {
+        action_type = "Octopus.Package"
+        channels = ["release"]
+        environments = ["production", "staging"]
+        properties = {
+            Octopus.Action.EnabledFeatures = ""
+            Octopus.Action.Package.DownloadOnTentacle = "False"
+            Octopus.Action.Package.FeedId = "octopus-server-built-in"
+            Octopus.Action.Package.PackageId = "MyApp.Web"
+        }
+
+        packages {
+            acquisition_location = "Server"
+            feed = "octopus-server-built-in"
+            package_id = "MyApp.Web"
+        }
+    }
+}
+
+step "smoke-test" {
+    name = "Smoke Test"
+
+    action {
+        action_type = "Octopus.Script"
+        properties = {
+            Octopus.Action.RunOnServer = "True"
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                $url = "https://#{WebHost}/health"
+                $response = Invoke-RestMethod -Uri $url -TimeoutSec 30
+                if ($response.status -ne "ok") { throw "Health check failed" }
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool = "hosted-windows"
+    }
+}
