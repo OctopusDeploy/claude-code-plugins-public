@@ -1,0 +1,47 @@
+name = "Regional Maintenance"
+description = "Runs region-specific maintenance against tagged tenants"
+default_guided_failure_mode = "Off"
+multi_tenancy_mode = "Tenanted"
+tags = ["Maintenance/Scheduled", "Owner/Platform Team"]
+
+connectivity_policy {
+    allow_deployments_to_no_targets = true
+}
+
+run_retention_policy {
+    type = "Count"
+    quantity_to_keep = 30
+}
+
+process {
+    step "regional-cleanup" {
+        name = "Regional Cleanup"
+
+        action {
+            action_type = "Octopus.AzurePowerShell"
+            tenant_tags = ["Region/EU", "Region/US-East"]
+            properties = {
+                Octopus.Action.Azure.AccountId = "#{AutomationAccount}"
+                Octopus.Action.Script.ScriptBody = <<-EOT
+                    Write-Host "Running cleanup for tenant #{Octopus.Deployment.Tenant.Name}"
+                    EOT
+                Octopus.Action.Script.ScriptSource = "Inline"
+                Octopus.Action.Script.Syntax = "PowerShell"
+            }
+            worker_pool = "hosted-windows"
+        }
+    }
+
+    step "notify" {
+        name = "Notify"
+
+        action {
+            action_type = "Octopus.Email"
+            properties = {
+                Octopus.Action.Email.Body = "Regional cleanup completed for #{Octopus.Deployment.Tenant.Name}"
+                Octopus.Action.Email.Subject = "Maintenance complete"
+                Octopus.Action.Email.ToTeamIds = "global/octopus-administrators"
+            }
+        }
+    }
+}

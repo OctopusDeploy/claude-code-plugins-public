@@ -1,0 +1,34 @@
+step "say-hello" {
+    name = "Say Hello"
+
+    action {
+        action_type = "Octopus.Script"
+        environments = ["production"]
+        properties = {
+            Octopus.Action.RunOnServer = "True"
+            Octopus.Action.Script.ScriptBody = <<-EOT
+                Write-Host "Hello from #{Octopus.Environment.Name}!"
+                EOT
+            Octopus.Action.Script.ScriptSource = "Inline"
+            Octopus.Action.Script.Syntax = "PowerShell"
+        }
+        worker_pool = "hosted-windows"
+    }
+}
+
+step "approve" {
+    name = "Approve"
+
+    action {
+        action_type = "Octopus.Manual"
+        properties = {
+            Octopus.Action.Manual.BlockConcurrentDeployments = "False"
+            Octopus.Action.Manual.Instructions = <<-EOT
+                ## Please review and approve
+                Confirm the previous step's output before proceeding.
+                EOT
+            Octopus.Action.Manual.ResponsibleTeamIds = "global/octopus-administrators"
+            Octopus.Action.RunOnServer = "false"
+        }
+    }
+}

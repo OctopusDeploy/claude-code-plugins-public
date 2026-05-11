@@ -1,0 +1,55 @@
+step "deploy-kustomize" {
+    name = "Deploy Kustomize"
+    package_requirement = "AfterPackageAcquisition"
+    properties = {
+        Octopus.Action.TargetRoles = "k8s-cluster"
+    }
+
+    action {
+        action_type = "Octopus.Kubernetes.Kustomize"
+        properties = {
+            Octopus.Action.GitRepository.Source = "Project"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "overlays/#{Octopus.Environment.Name}"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Kubernetes.ServerSideApply.Enabled = "False"
+            Octopus.Action.Kubernetes.ServerSideApply.ForceConflicts = "False"
+            Octopus.Action.KubernetesContainers.DeploymentWait = "False"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            Octopus.Action.SubstituteInFiles.TargetFiles = "*.yaml"
+        }
+
+        packages "my-container-image" {
+            acquisition_location = "NotAcquired"
+            feed = "docker-hub"
+            package_id = "my-container-image"
+        }
+    }
+}
+
+step "deploy-kustomize-external-git" {
+    name = "Deploy Kustomize from External Git"
+    package_requirement = "AfterPackageAcquisition"
+    properties = {
+        Octopus.Action.TargetRoles = "k8s-cluster"
+    }
+
+    action {
+        action_type = "Octopus.Kubernetes.Kustomize"
+        properties = {
+            Octopus.Action.GitRepository.Source = "External"
+            Octopus.Action.Kubernetes.DeploymentTimeout = "180"
+            Octopus.Action.Kubernetes.Kustomize.OverlayPath = "overlays/#{Octopus.Environment.Name}"
+            Octopus.Action.Kubernetes.ResourceStatusCheck = "True"
+            Octopus.Action.Script.ScriptSource = "GitRepository"
+            Octopus.Action.SubstituteInFiles.TargetFiles = "*.yaml"
+        }
+
+        git_dependencies {
+            default_branch = "main"
+            git_credential_id = "github-deploy-key"
+            git_credential_type = "Library"
+            repository_uri = "https://github.com/example/k8s-config.git"
+        }
+    }
+}

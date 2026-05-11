@@ -1,0 +1,60 @@
+variable "AzureAccount" {
+    type = "AzureAccount"
+
+    value "team-ai-test" {
+        environment = ["test"]
+    }
+    value "team-ai-production" {
+        environment = ["production"]
+    }
+}
+
+variable "Location" {
+    value "eastus2" {}
+}
+
+variable "DataZoneCapacity" {
+    value "30" {
+        environment = ["test"]
+    }
+    value "300" {
+        environment = ["production"]
+    }
+}
+
+variable "RegionalConfig" {
+    value "eu-prod-config" {
+        environment = ["production"]
+        tenant_tag = ["Region/EU"]
+    }
+    value "us-prod-config" {
+        environment = ["production"]
+        tenant_tag = ["Region/US-East"]
+    }
+}
+
+variable "EnableNewPipeline" {
+    value "false" {
+        prompt {
+            label = "Enable new pipeline?"
+            description = "Flips the kill-switch for the rewrite. Default is off."
+            required = true
+        }
+    }
+}
+
+variable "ReleaseNotes" {
+    value {
+        value = <<-EOT
+            Release notes for #{Octopus.Project.Name}
+              - Number: #{Octopus.Release.Number}
+              - Built from: #{Octopus.Release.SourceCommit}
+              - Deploying to: #{Octopus.Environment.Name}
+            EOT
+    }
+}
+
+variable "ApiKey" {
+    type = "Sensitive"
+    value {}
+}
