@@ -72,7 +72,7 @@ Before `PUT /api/{sp}/projects/{id}/deploymentprocesses`, dry-run the proposed s
 POST /api/{sp}/projects/{id}/deploymentprocesses/validate
 ```
 
-Returns specific warnings about missing variables, bad tag references, or missing packages. Fix them before saving — the customer sees a much cleaner first-deploy experience when validation runs ahead of the write.
+Returns specific warnings about missing variables, bad tag references, or missing packages. Fix them before saving — the user sees a much cleaner first-deploy experience when validation runs ahead of the write.
 
 ---
 

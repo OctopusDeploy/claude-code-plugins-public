@@ -86,24 +86,13 @@ versioning_strategy {
 }
 ```
 
-The release version is taken from the package version of the named step. If the step has only one package, omit `package`.
+The release version is taken from the package version of the named step. If the step has only one package, **omit the `package` attribute entirely** — do not write `package = ""`.
 
-### `release_creation_strategy` (less common)
+> **Attribute names are `step` and `package`, not `deployment_action` / `package_reference`.** The OCL converter looks up these exact names via `[OclName(...)]` attributes on `DeploymentActionPackage`; any other name fails with a runtime error `Sequence contains no matching element` when Octopus tries to load the file. The C# property names (`DeploymentActionId` / `PackageReferenceId`) and the JSON form used in API responses do not match the OCL form.
 
-Defines how new releases are created from triggers. When omitted, releases are created manually.
+`step` accepts either the action slug (e.g. `deploy-order-service`) or its display name (e.g. `"Deploy Order Service to App Service"`). Prefer the slug.
 
-```ocl
-release_creation_strategy {
-    channel = "release"                       // optional
-    release_creation_package_step = "<slug>"  // step whose package version triggers releases
-    release_creation_package {
-        deployment_action = "<action-slug>"
-        package_reference = "<package-ref>"
-    }
-}
-```
-
-This block appears rarely. Most projects rely on triggers configured at the space level rather than in the project's CaC.
+`release_creation_strategy` is not a `deployment_settings.ocl` block — it lives on the `Project` document and is not version-controlled, so do not include it in OCL files. Release-creation triggers are configured at the space level.
 
 ## Common patterns
 

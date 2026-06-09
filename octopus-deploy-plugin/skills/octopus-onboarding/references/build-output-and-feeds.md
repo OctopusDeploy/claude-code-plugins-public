@@ -1,8 +1,8 @@
 # Build output and feeds
 
-Companion reference for `SKILL.md` (`octopus-onboarding`) §2. Use this when you're working out where the customer's build artifacts come from and how Octopus will pull them in.
+Companion reference for `SKILL.md` (`octopus-onboarding`) §2. Use this when you're working out where the user's build artifacts come from and how Octopus will pull them in.
 
-The cardinal rule from `SKILL.md` repeated up front: **don't modify the customer's CI config and don't commit to their repo.** If a CI snippet is needed, output it; let the customer paste.
+The cardinal rule from `SKILL.md` repeated up front: **don't modify the user's CI config and don't commit to their repo.** If a CI snippet is needed, output it; let the user paste.
 
 ## §2.1 Detect the CI system from the repo
 
@@ -21,6 +21,20 @@ Check for these files. Multiple may coexist — the active one is usually the mo
 | `.teamcity/` or `settings.kts` | TeamCity | Kotlin DSL — hard to parse; prefer asking |
 | `Makefile` + no CI config | Bespoke / local-only | Ask the user what runs it |
 | None of the above | No CI yet | See §2.5 below |
+
+Once the CI system is identified, emit it as part of the **Stack detected** one-liner from `SKILL.md` §0.6 SCAN:
+
+```
+Stack detected: <language(s)> · <deployment artifact> · CI: <system>
+```
+
+Examples (CI half of the line):
+- `… · CI: GitHub Actions` — `.github/workflows/*` present.
+- `… · CI: Azure Pipelines` — `azure-pipelines.yml` present.
+- `… · CI: Jenkins (Jenkinsfile)` — note the file kind in parens when the system has several shapes.
+- `… · CI: none detected` — none of the files above are present (jump to §2.5).
+
+If multiple CI systems are present (e.g., `.github/workflows/` *and* `azure-pipelines.yml`), join them with a slash: `… · CI: GitHub Actions / Azure Pipelines` and ask in §0.7 CLARIFY which one is the active path.
 
 ## §2.2 Infer what's built and where it's pushed
 
@@ -149,7 +163,7 @@ After a package lands in the feed (any model), optionally attach build info. Oct
   - `Commits[]` — hashes + messages between this build and the last.
   - `WorkItems[]` — Jira IDs, GitHub issue numbers, Linear refs (parsed from commit messages).
 
-The agent can collect most of this from inside a CI run. For external feeds, output a paste-ready curl snippet — same rule as Model B: don't edit the customer's config.
+The agent can collect most of this from inside a CI run. For external feeds, output a paste-ready curl snippet — same rule as Model B: don't edit the user's config.
 
 ## §2.7 Version detection — critical detail
 

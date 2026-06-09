@@ -1,11 +1,11 @@
 ---
 name: octopus-onboarding
-description: Guides a customer through their first Octopus Deploy setup — connecting a code repository, registering a deployment target (Kubernetes, Azure App Service, AWS ECS, Lambda, on-prem Tentacle, etc.), wiring up packages from their existing CI, and reaching their first real deployment. Prefers the Octopus MCP server's tools and resources when connected, and falls back to direct Octopus REST API calls when not. Trigger on "set up Octopus", "deploy my service", "connect my repo to Octopus", "first Octopus deployment", "Octopus project setup", "onboard to Octopus", "configure Octopus deployments", or any conversation where a user has Octopus credentials in hand and wants to stand up a working deployment from scratch — even if they don't use those exact phrases.
+description: Guides a user through their first Octopus Deploy setup — connecting a code repository, registering a deployment target (Kubernetes, Azure App Service, AWS ECS, Lambda, on-prem Tentacle, etc.), wiring up packages from their existing CI, and reaching their first real deployment. Prefers the Octopus MCP server's tools and resources when connected, and falls back to direct Octopus REST API calls when not. Trigger on "set up Octopus", "deploy my service", "connect my repo to Octopus", "first Octopus deployment", "Octopus project setup", "onboard to Octopus", "configure Octopus deployments", or any conversation where a user has Octopus credentials in hand and wants to stand up a working deployment from scratch — even if they don't use those exact phrases.
 ---
 
 # Octopus onboarding
 
-This skill walks an AI agent through a customer's first end-to-end Octopus Deploy setup: connect a repo, register a target, wire up packages from CI, and reach a first real deploy. It assumes the user has an Octopus instance reachable and credentials in hand. It does **not** cover authoring Config-as-Code (`.ocl`) files — for that, use the sibling `writing-ocl` skill.
+This skill walks an AI agent through a user's first end-to-end Octopus Deploy setup: connect a repo, register a target, wire up packages from CI, and reach a first real deploy. It assumes the user has an Octopus instance reachable and credentials in hand. It does **not** cover authoring Config-as-Code (`.ocl`) files — for that, use the sibling `writing-ocl` skill.
 
 ## Mental model
 
@@ -18,6 +18,10 @@ Three things to hold in your head at once:
 Vocabulary is a known landmine — *tenant*, *space*, *channel*, *runbook*, *lifecycle* all confuse new users. Translate before you ask. See `references/vocabulary-and-deferrals.md`.
 
 ## Before you touch anything
+
+### 0.0 Are you resuming a prior session?
+
+If the user has run this skill against this space before, don't 409 on collisions. Before creating anything, check `list_projects`, `list_environments`, `find_deployment_targets`, and the feed list for objects with matching names; treat each pre-existing match as `✓ Reused existing …` (see *Announcing progress to the user* below). The PLAN summary (§0.8) must distinguish new resources from reused ones. Octopus state — not a local cache file — is the source of truth.
 
 ### 0.1 Establish two server URLs
 
@@ -34,7 +38,7 @@ Record both. Call them `serverUrl` (yours) and `agentReachableUrl` (the target's
 
 ### 0.2 Detect transport — MCP or direct REST?
 
-The customer may have the official Octopus MCP server connected (tools named `list_spaces`, `find_releases`, `create_release`, `deploy_release`, `run_runbook`, `grep_llms_txt`, `read_resource`, `execute`, etc.; resources under `octopus://...`). If they do, **prefer it** — every read in this skill has a tighter, validated MCP equivalent, and writes are gated through the elicitation flow rather than raw HTTP.
+The user may have the official Octopus MCP server connected (tools named `list_spaces`, `find_releases`, `create_release`, `deploy_release`, `run_runbook`, `grep_llms_txt`, `read_resource`, `execute`, etc.; resources under `octopus://...`). If they do, **prefer it** — every read in this skill has a tighter, validated MCP equivalent, and writes are gated through the elicitation flow rather than raw HTTP.
 
 If the MCP server isn't connected, fall back to direct REST with `X-Octopus-ApiKey: <key>` in the header. The user must have an API key (Profile → My API Keys in the Octopus UI).
 
@@ -76,16 +80,119 @@ Three branches, picked by the user's own words:
 
 The branches share the same shared spine (§1) and the same build-output handoff (§2). Only the post-spine sequence differs.
 
-### 0.6 Read the repo silently
+### 0.6 SCAN — read the repo silently
 
-If a local repo is open, detect what you can without asking:
+If a local repo is open, detect what you can without asking. Use Glob/Grep (or the equivalent file-listing tool) up to 3 levels deep. Don't ask the user what's in their own repo if a signal file is sitting there.
 
-- **Package shape**: `Dockerfile` → container image; `*.csproj` → NuGet; `pom.xml` / `build.gradle` → JAR; `Chart.yaml` → Helm chart; `serverless.yml` / SAM → Lambda; `main.tf` → Terraform; static build output → bucket / CDN.
-- **CI system and where it pushes** — see `references/build-output-and-feeds.md` for the full detection table.
-- **Target hints** — Kubernetes manifests, ECS task definitions, Azure App Service config.
-- **Project name** — `package.json`, `.csproj`, `Cargo.toml`, etc. Offer it as the Octopus project name rather than asking.
+**Signal files to look for** (one pass, then stop — don't re-scan per section):
 
-Present the detected stack as a confirmation, not a question: *"Looks like a Helm chart built by GitHub Actions and pushed to GHCR, deploying to Kubernetes — correct?"*
+| Stack | Signal files |
+|---|---|
+| Containers | `Dockerfile`, `docker-compose.yml`, `compose.yaml` |
+| Node.js / TypeScript | `package.json`, `pnpm-workspace.yaml`, `turbo.json` |
+| .NET | `*.csproj`, `*.sln`, `*.fsproj`, `*.vbproj` |
+| Java / JVM | `pom.xml`, `build.gradle`, `build.gradle.kts`, `settings.gradle` |
+| Python | `requirements.txt`, `pyproject.toml`, `Pipfile`, `setup.py` |
+| Go | `go.mod` |
+| Ruby | `Gemfile` |
+| Rust | `Cargo.toml` |
+| PHP | `composer.json` |
+| Kubernetes | `Chart.yaml`, `kustomization.yaml`, `**/k8s/*.yaml`, `**/manifests/*.yaml` |
+| Serverless | `serverless.yml`, `template.yaml` (SAM), `samconfig.toml` |
+| Terraform / OpenTofu | `*.tf`, `terraform.tfvars`, `*.tfvars.json` |
+| Static sites | `next.config.*`, `nuxt.config.*`, `gatsby-config.*`, `astro.config.*`, `vite.config.*` |
+| CI | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/config.yml`, `bitbucket-pipelines.yml`, `buildkite.yml`, `cloudbuild.yaml` |
+
+Always exclude: `node_modules/`, `.git/`, `vendor/`, `bin/`, `obj/`, `target/`, `dist/`, `build/`, `out/`, `.next/`.
+
+**Build a stack model with three dimensions:**
+
+1. **Language / framework** — one or more (e.g., `Node.js (Express)`, `.NET 8`, `Python (FastAPI)`, `Go`, `Java (Spring Boot)`).
+2. **Deployment artifact** — what gets shipped (`Container`, `Helm chart`, `JAR`, `NuGet`, `Lambda zip`, `Static site`, `Raw scripts`, `Terraform`).
+3. **CI system** — detected from the CI signal files above, or `none detected`.
+
+Also infer: **project name** from `package.json`, `*.csproj`, `Cargo.toml`, `pyproject.toml`, or repo folder name. Offer it as the Octopus project name rather than asking. **Target hints** — Kubernetes manifests, ECS task definitions, Azure App Service config, Lambda templates.
+
+**Print a one-line summary** in this exact format:
+
+```
+Stack detected: <language(s)> · <deployment artifact> · CI: <system>
+```
+
+Examples:
+- `Stack detected: .NET 8 · Container · CI: Azure Pipelines`
+- `Stack detected: Python (FastAPI) · Lambda (SAM) · CI: GitHub Actions`
+- `Stack detected: Go · Helm chart · CI: none detected`
+- `Stack detected: Node.js · Container + docker-compose · CI: GitHub Actions`
+
+Present the detected stack as a **statement**, not a question: *"Looks like a Helm chart built by GitHub Actions and pushed to GHCR, deploying to Kubernetes — correct?"* The user confirms or corrects.
+
+Full CI detection table (push step → registry coordinates → Octopus `FeedType`) is in `references/build-output-and-feeds.md`.
+
+If any of the ambiguity triggers in §0.7 fire, ask **before** confirming the stack. Otherwise proceed to §0.8.
+
+### 0.7 CLARIFY — when to ask before guessing
+
+Default posture is silent detection (§0.6). But when the signals genuinely conflict or are absent, asking once is much cheaper than guessing wrong. **Ask one question at a time**, A/B/C format where possible.
+
+| Trigger | Ask |
+|---|---|
+| `Dockerfile` **and** `docker-compose.yml`/`compose.yaml` both present | "Which are you planning to deploy with — the standalone container image, or the compose stack?" |
+| Multiple `Dockerfile`s at different paths | "I see N services with Dockerfiles (`<path1>`, `<path2>`, …). Which one should I configure first? We can add the others after." |
+| Kubernetes manifests/`Chart.yaml` **and** `docker-compose.yml` both present | "Is this deploying to Kubernetes, or running as docker-compose?" |
+| No language signal files detected at all | "I couldn't detect a language from the repo. What is this app — language and framework?" |
+| Terraform present with no deployment artifact (no container, Helm chart, Lambda zip, etc.) | "Is Octopus deploying the Terraform itself (infra-as-code), or something this Terraform provisions?" |
+| Multiple top-level `*.sln` / monorepo with multiple deployables | "Multiple projects detected (`<list>`). Which one are we onboarding first?" |
+| `serverless.yml` **and** `Dockerfile` both present | "Deploying as Lambda (Serverless Framework) or as a container?" |
+| CI detected but pushes to multiple registries | "Your CI pushes to `<registries>`. Which is the one Octopus should pull from?" |
+| Multiple CI systems present (e.g., GitHub Actions **and** Azure Pipelines configs both committed) | "I see configs for `<systems>`. Which one is the active build path?" |
+
+If none of these fire, **don't ask** — confirm the stack as a statement and continue. Asking unnecessary questions is one of the failure modes called out in §5 and §9.
+
+### 0.8 PLAN — confirm before any write
+
+Before any Octopus mutation, print a plain-English plan of every resource the agent will create *or reuse*. Wait for an explicit `yes` / `go` from the user. If the user objects, revise and re-print — don't half-execute a plan.
+
+Order the plan from outer to inner: **space → environments → lifecycle → project → deployment target(s) → cloud account (if needed) → feed → deployment process steps → variables → release-creation source (CI snippet or manual)**.
+
+Worked example for a Helm-on-Kubernetes onboarding:
+
+```
+Plan for "checkout-api" onboarding:
+  • Workspace: Default (Spaces-1, existing)
+  • Environments to create: Development, Staging, Production
+  • Lifecycle: "checkout-api Lifecycle" (Dev auto → Staging manual → Prod manual + 1 approval)
+  • Project: "checkout-api"
+  • Cloud account: AWS account "checkout-prod-oidc" (OIDC role, new)
+  • Deployment target: Kubernetes agent in namespace "checkout-prod" (new)
+  • Feed: GitHub Container Registry (new, scoped read-only PAT)
+  • Deployment process: 1 step — Helm Chart Upgrade ("checkout/checkout-api")
+  • Variables: 2 placeholders (Image.Tag, Replicas)
+  • Release creation: from your existing GitHub Actions workflow (snippet provided; you paste, we don't commit)
+
+Confirm to proceed (yes / no / change something)?
+```
+
+Two rules for the plan:
+
+1. **Mark resumed objects explicitly.** If §0.0 detected pre-existing matches, say so: `• Project: "checkout-api" (existing, will reuse)` vs. `• Project: "checkout-api" (new)`. Never silently mutate something that already existed.
+2. **The plan is the gate.** Don't speed-run past it because the stack was unambiguous. The PLAN is also the user's last chance to swap branch (3A vs. 3B vs. 3C) before writes start.
+
+### Announcing progress to the user
+
+Three behavioural conventions, applied from this point forward across every stage:
+
+- **Stage banner.** When entering a major section, announce it once: `**Stage 0 — Prerequisites**`, `**Stage 1 — Shared spine: Orient / Connect / Register**`, `**Stage 2 — Build output handoff**`, `**Stage 3A — Quick deploy**` (or 3B/3C, whichever the user picked). One banner per section, not one per HTTP call.
+- **Action confirmation.** After each successful Octopus mutation, print `✓ <verb> <resource>: <Id>`. Examples:
+  - `✓ Created environment 'Development': Environments-3`
+  - `✓ Registered Kubernetes agent target 'web-cluster': Machines-12`
+  - `✓ Updated deployment process for 'checkout-api' (4 steps)`
+  - `✓ Reused existing environment 'Production': Environments-1`
+  - `✓ Created release 1.4.0 for 'checkout-api': Releases-87`
+  - `→ Deploy command ready (waiting for you to run it)` for output-only steps that don't auto-fire.
+- **No silent writes.** Every `POST` / `PUT` / `execute` / `create_release` / `run_runbook` write call must be followed by a confirmation line. Reads (`GET`, `list_*`, `find_*`, `read_resource`) stay silent.
+
+This convention layers *on top of* the existing posture in §5 — it doesn't replace the conversational tone of §1 Step A's "Orient" sentence, and it doesn't make `register-target` any less guided. It just makes the agent's actions legible to the user.
 
 ---
 
@@ -178,41 +285,66 @@ After the spine and §2 are done, peel off into the branch the user picked in §
 
 ### 3A. "Get my service deployed quickly"
 
-Goal: first real deploy in under ten steps. Skip everything that isn't load-bearing.
+**Stage 3A — Quick deploy.** Goal: first real deploy in under ten steps. Skip everything that isn't load-bearing.
 
-1. **Project** — `POST /api/{sp}/projects`. Infer the name from the repo. Default lifecycle, default project group. `TenantedDeploymentMode: "Untenanted"` unless the scenario says otherwise.
-2. **Feed** — already done in §2, unless using Model B or C.
-3. **Deployment process** — `PUT /api/{sp}/projects/{projectId}/deploymentprocesses`. Pick an `ActionType` from `references/deployment-process-steps.md` based on the target. **For Kubernetes, prefer manifest-based steps** (`Octopus.HelmChartUpgrade`, `Octopus.KubernetesDeployRawYaml`, `Octopus.Kubernetes.Kustomize`) over the legacy container builder — keeps the user's manifests in the repo, where they belong.
-4. **Variables** — `PUT /api/{sp}/variables/{variableSetId}`. Only what the deployment process actually references. Don't pre-create "standard sets" — they register as noise.
-5. **Release + deploy** — `POST /api/{sp}/releases` then *output* (don't auto-run) `POST /api/{sp}/deployments`. Let the user fire the first deploy with their own eyes on the logs.
+1. **Create project** — `POST /api/{sp}/projects`, name inferred from the repo. Default lifecycle, default project group. `TenantedDeploymentMode: "Untenanted"` unless the scenario says otherwise. Announce: `✓ Created project '<name>': Projects-<id>`.
+2. **Feed** — already done in §2, unless using Model B or C. If new feed was registered there, it should already have produced `✓ Created feed '<name>': Feeds-<id>`.
+3. **Configure deployment process** — `PUT /api/{sp}/projects/{projectId}/deploymentprocesses`. Pick an `ActionType` from `references/deployment-process-steps.md` based on the target. **For Kubernetes, prefer manifest-based steps** (`Octopus.HelmChartUpgrade`, `Octopus.KubernetesDeployRawYaml`, `Octopus.Kubernetes.Kustomize`) over the legacy container builder — keeps the user's manifests in the repo, where they belong. Announce: `✓ Updated deployment process for '<project>' (<N> steps: <step names>)`.
+4. **Set variables** — `PUT /api/{sp}/variables/{variableSetId}`. Only what the deployment process actually references. Don't pre-create "standard sets" — they register as noise. Announce: `✓ Set variables for '<project>' (<N> placeholders)`.
+5. **Create release + output deploy command** — `POST /api/{sp}/releases` then *output* (don't auto-run) `POST /api/{sp}/deployments`. Let the user fire the first deploy with their own eyes on the logs. Announce: `✓ Created release <Version> for '<project>': Releases-<id>` followed by `→ Deploy command ready (waiting for you to run it)`.
 
 Skip: tenants, channels, runbooks, process templates, dashboards. Add when needed.
 
+Once the first deploy succeeds, offer the ephemeral preview environments capability — see §3D below.
+
 ### 3B. "Set up a pipeline with approvals"
 
-Adds three things over 3A for a trustworthy multi-environment pipeline before any developer uses it:
+**Stage 3B — Pipeline with approvals.** Adds three things over 3A for a trustworthy multi-environment pipeline before any developer uses it:
 
-1. **Environments** — explicit Dev / Staging / Prod via `POST /api/{sp}/environments`. `AllowDynamicInfrastructure: false` on Prod.
-2. **Lifecycle** (call it "promotion path" or "pipeline stages" to the user) — `POST /api/{sp}/lifecycles`. Phase 1 (Dev) automatic on release; Phase 2 (Staging) manual promotion; Phase 3 (Prod) manual + `MinimumEnvironmentsBeforePromotion`.
-3. **Manual approval step** — add an `Octopus.Manual` step scoped to Prod via `Environments: [Prod-env-id]` and `ResponsibleTeamIds`. Create the team first with `POST /api/{sp}/teams` if needed.
+1. **Create environments** — explicit Dev / Staging / Prod via `POST /api/{sp}/environments`. `AllowDynamicInfrastructure: false` on Prod. Announce one line per environment: `✓ Created environment 'Development': Environments-<id>`, etc.
+2. **Create lifecycle** (call it "promotion path" or "pipeline stages" to the user) — `POST /api/{sp}/lifecycles`. Phase 1 (Dev) automatic on release; Phase 2 (Staging) manual promotion; Phase 3 (Prod) manual + `MinimumEnvironmentsBeforePromotion`. Announce: `✓ Created lifecycle '<name>': Lifecycles-<id> (3 phases)`.
+3. **Add manual approval step** — add an `Octopus.Manual` step scoped to Prod via `Environments: [Prod-env-id]` and `ResponsibleTeamIds`. Create the team first with `POST /api/{sp}/teams` if needed. Announce the team creation (if any) and the step addition: `✓ Added manual approval step (scoped to Production, ResponsibleTeam: <name>)`.
+
+Then complete the 3A steps (project, deployment process, variables, release+output deploy) using the lifecycle from step 2. Apply the same announcement convention.
 
 CI handoff (§2) often defaults to Model C here — the user wants CI to orchestrate. Output the snippet; do not modify their CI file.
 
 Rollback: confirm the lifecycle can see prior releases. Explain rollback via `POST /api/{sp}/deployments` to a prior release ID, or an `Octopus.DeployRelease` step with `DeploymentCondition: IfNewer`. Don't pre-configure it — explain the mechanics on request.
 
+Once the first deploy succeeds, offer the ephemeral preview environments capability — see §3D below.
+
 ### 3C. "Stand up shared infrastructure for multiple teams or customers"
 
-Longer setup, intentionally. Users on this path tolerate a longer onboarding if it means the model holds up when many teams start using it.
+**Stage 3C — Shared platform.** Longer setup, intentionally. Users on this path tolerate a longer onboarding if it means the model holds up when many teams start using it. Each numbered step ends with the matching announcement.
 
-1. **Model tenancy first.** Tag sets (`POST /api/{sp}/tagsets`) for each dimension; tenants (`POST /api/{sp}/tenants`) with `TenantTags`; set `TenantedDeploymentMode` on projects.
-2. **Git-backed configuration.** `POST /api/{sp}/projects/{id}/git/convert`. Process templates in Platform Hub: `POST /api/platformhub/{gitRef}/processtemplates`.
-3. **Project groups + scoped user roles.** `POST /api/{sp}/projectgroups`, `POST /api/userroles`, `POST /api/{sp}/scopeduserroles`.
-4. **Worker pools.** `POST /api/{sp}/workerpools` — dynamic for per-cloud execution, static for on-prem runners.
-5. **Shared feeds.** Create once with `POST /api/{sp}/feeds`; reference from every project's deployment process.
-6. **Process templates** instead of step-by-step processes. Share to consumer spaces via `POST /api/platformhub/{gitRef}/processtemplates/{slug}/share`.
-7. **Compliance policies** (`POST /api/platformhub/{gitRef}/policies`) for audit trails, deploy freezes, manual gates.
+1. **Model tenancy first.** Tag sets (`POST /api/{sp}/tagsets`) for each dimension; tenants (`POST /api/{sp}/tenants`) with `TenantTags`; set `TenantedDeploymentMode` on projects. Announce: `✓ Created tag set '<name>': TagSets-<id> (<N> tags)` for each, then `✓ Created tenant '<name>': Tenants-<id>` for each tenant.
+2. **Git-backed configuration.** `POST /api/{sp}/projects/{id}/git/convert`. Process templates in Platform Hub: `POST /api/platformhub/{gitRef}/processtemplates`. Announce: `✓ Converted project '<name>' to Git-backed config (branch: <gitRef>)`.
+3. **Project groups + scoped user roles.** `POST /api/{sp}/projectgroups`, `POST /api/userroles`, `POST /api/{sp}/scopeduserroles`. Announce one line per project group / user role / scoped role.
+4. **Worker pools.** `POST /api/{sp}/workerpools` — dynamic for per-cloud execution, static for on-prem runners. Announce: `✓ Created worker pool '<name>': WorkerPools-<id>`.
+5. **Shared feeds.** Create once with `POST /api/{sp}/feeds`; reference from every project's deployment process. Announce: `✓ Created shared feed '<name>': Feeds-<id>`.
+6. **Process templates** instead of step-by-step processes. Share to consumer spaces via `POST /api/platformhub/{gitRef}/processtemplates/{slug}/share`. Announce: `✓ Published process template '<slug>' (v<version>)` and `✓ Shared template to space '<consumer-space>'` for each share.
+7. **Compliance policies** (`POST /api/platformhub/{gitRef}/policies`) for audit trails, deploy freezes, manual gates. Announce: `✓ Created compliance policy '<name>'`.
 
 Only after all of that, stand up a reference project the 3A way, wired through the shared template + tag model.
+
+Once that reference project's first deploy succeeds, the ephemeral preview environments capability (§3D) is also available — though most 3C users handle PR previews per-tenant via the tag model first.
+
+### 3D. Optional — Ephemeral preview environments for pull requests
+
+**Stage 3D — Ephemeral previews.** *Offered at the end of any branch (3A/3B/3C), only after the first real deploy has succeeded.* Not a separate branch; an additive capability.
+
+Ask one question: *"Want to wire up ephemeral preview environments for pull requests? This adds a Preview environment in Octopus, a teardown runbook, and a GitHub Actions PR workflow snippet you'd paste in (we don't commit to your repo)."*
+
+If yes, follow `references/ephemeral-environments.md` end-to-end. In short, it creates:
+
+- A `Preview` environment with `AllowDynamicInfrastructure: true`.
+- A `Teardown Preview Environment` runbook (script-step skeleton — user fills in cluster-specific teardown).
+- A `Preview.Url` variable placeholder.
+- *Output* (not committed) a `.github/workflows/octopus-pr-preview.yml` snippet using `OctopusDeploy/create-release-action@v3` and `OctopusDeploy/run-runbook-action@v3`. GitLab CI, Azure Pipelines, and CircleCI equivalents are also in the reference.
+
+Apply the same `✓` action-confirmation convention. The hard rule from §2 / §9 still holds: **never commit anything to the user's repo** — emit the YAML, let them paste it.
+
+If no, stop cleanly. The user can come back to it later by re-running the skill.
 
 ---
 
@@ -270,6 +402,8 @@ Common user frustrations. Don't do any of these unless the user explicitly asks:
 - Ask the user to type any Octopus ID (`Spaces-1`, `Projects-2`) by hand.
 - Use *tenant* / *space* / *channel* / *runbook* / *lifecycle* without grounding them in the user's domain first. See `references/vocabulary-and-deferrals.md`.
 
+Exception: **ephemeral preview environments are explicitly offered**, not deferred — but only after a successful first real deploy on §3A/§3B/§3C. See §3D and `references/ephemeral-environments.md`.
+
 ---
 
 ## Pointer table — which reference file to read for what
@@ -283,5 +417,6 @@ Common user frustrations. Don't do any of these unless the user explicitly asks:
 | Picking an `ActionType` and its property catalog (incl. worked example) | `references/deployment-process-steps.md` |
 | Vocabulary translation and what to defer | `references/vocabulary-and-deferrals.md` |
 | API errors and the `PUT`-is-replace rule | `references/error-recovery.md` |
+| Ephemeral preview environments for PRs (Preview env + teardown runbook + CI snippet) | `references/ephemeral-environments.md` |
 
 For full command bodies and the step-type catalog, **always** consult `octopus://api/llms.txt` (via MCP `read_resource` or `grep_llms_txt`) or the REST equivalent `GET /api/experimental/llms.txt`. Don't guess.

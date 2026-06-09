@@ -6,10 +6,10 @@ Read this file once at the start of an onboarding session.
 
 ## Detect transport
 
-The customer either has the official Octopus MCP server connected, or they don't.
+The user either has the official Octopus MCP server connected, or they don't.
 
 - **MCP connected** — your tool list includes tools like `list_spaces`, `list_projects`, `find_releases`, `read_resource`, `execute`. Server name is typically `octopus-deploy` or `octopus-deploy-mcp`. Resources under `octopus://...` are dereferenceable.
-- **MCP not connected** — fall back to direct REST against `{serverUrl}` with `X-Octopus-ApiKey: <api-key>` in every request header (or `Authorization: Bearer <token>` if the customer is using OAuth-style tokens).
+- **MCP not connected** — fall back to direct REST against `{serverUrl}` with `X-Octopus-ApiKey: <api-key>` in every request header (or `Authorization: Bearer <token>` if the user is using OAuth-style tokens).
 
 Default when in doubt: probe for `list_spaces` in your available tools. If it's there, MCP is live. If it's not, REST it is.
 
@@ -115,11 +115,29 @@ When you need to mutate state and there's no dedicated MCP tool (e.g., creating 
 
 ### Toolset filtering
 
-The MCP server organizes tools into toolsets. The customer can enable a subset via `--toolsets core,releases,deployments` on launch. Available toolsets:
+The MCP server organizes tools into toolsets. The user can enable a subset via `--toolsets core,releases,deployments` on launch. Available toolsets:
 
 `core` (always on), `projects`, `deployments`, `releases`, `runbooks`, `tasks`, `tenants`, `kubernetes`, `machines`, `certificates`, `accounts`, `interruptions`, `context`.
 
-If a tool you expect isn't in your tool list, the customer's MCP server may have it filtered out — fall back to REST or `execute` for that one call rather than asking them to reconfigure.
+If a tool you expect isn't in your tool list, the user's MCP server may have it filtered out — fall back to REST or `execute` for that one call rather than asking them to reconfigure.
+
+## Announcing writes
+
+Per the *Announcing progress to the user* convention in `SKILL.md`, every write call (MCP or REST) must be followed by a one-line confirmation. Reads stay silent. Use the `✓` form for mutations and `→` for output-only handoffs (snippets the user pastes / commands the user runs).
+
+| Call | Announcement |
+|---|---|
+| `execute({ resource: "environments", body: {...} })` succeeds | `✓ Created environment '<Name>': <Id>` |
+| `execute({ resource: "projects", body: {...} })` succeeds | `✓ Created project '<Name>': Projects-<id>` |
+| `execute({ verb: "PUT", path: "...projects/{id}/deploymentprocesses" })` succeeds | `✓ Updated deployment process for '<project>' (<N> steps)` |
+| `execute({ resource: "machines", body: {...} })` succeeds | `✓ Registered target '<Name>': Machines-<id>` |
+| `create_release` succeeds | `✓ Created release <Version> for '<Project>': Releases-<id>` |
+| `deploy_release` invoked but *output-only* (snippet handed to user) | `→ Deploy command ready (waiting for you to run it)` |
+| `run_runbook` succeeds | `✓ Ran runbook '<Name>': RunbookRuns-<id>` |
+| Pre-existing object detected (matched by name in §0.0 resume) | `✓ Reused existing <resource> '<Name>': <Id>` |
+| 409 collision on retry of a known-name resource | `✓ Reused existing <resource> '<Name>': <Id>` (look up the ID first; don't surface the 409 as an error) |
+
+Surface the destructive call's intent **before** the elicitation prompt fires, so the user doesn't see the confirmation dialog cold. Pattern: announce what you're about to do in one line, let the elicitation prompt the user, then after success print the `✓` line.
 
 ## Practical guidance
 
@@ -128,4 +146,4 @@ If a tool you expect isn't in your tool list, the customer's MCP server may have
 - **Use `grep_task_log` for failure diagnosis.** Don't dereference the full task details resource for log search.
 - **Use `execute` for writes that have no dedicated tool** — feed creation, target registration, variable sets, etc. Compose the body using shapes from `llms.txt`.
 - **Confirmation behaviour you should expect.** Every destructive call (`deploy_release`, `run_runbook`, non-GET `execute`) will pause for user confirmation unless `OCTOPUS_SKIP_ELICITATION=true` is set. Treat the pause as the user's last chance to bail — surface what you're about to do before triggering the call, so the elicitation prompt isn't the first time they see the action.
-- **REST fallback parity.** Every flow in `SKILL.md` works via raw REST too — the MCP layer is preferred but not required. If a customer is testing in an environment where the MCP server isn't running, the same `POST /api/{sp}/...` call sequences from `SKILL.md` apply.
+- **REST fallback parity.** Every flow in `SKILL.md` works via raw REST too — the MCP layer is preferred but not required. If a user is testing in an environment where the MCP server isn't running, the same `POST /api/{sp}/...` call sequences from `SKILL.md` apply.
