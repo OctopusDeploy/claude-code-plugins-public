@@ -1,19 +1,31 @@
-# Octopus Deploy Claude Code Plugin
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/octopusdeploy/mcp-server/blob/main/images/OctopusDeploy_Logo_DarkMode.png?raw=true">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/octopusdeploy/mcp-server/blob/main/images/OctopusDeploy_Logo_LightMode.png?raw=true">
+  <img alt="Octopus Deploy Logo" src="https://github.com/octopusdeploy/mcp-server/blob/main/images/OctopusDeploy_Logo_LightMode.png?raw=true" />
+</picture>
 
-An Octopus Deploy plugin for [Claude Code](https://claude.com/claude-code). It bundles the Octopus Deploy MCP server, an agent, and a set of skills so Claude can inspect, query, diagnose, and help configure your Octopus Deploy instance using live data.
+# Claude Code Plugin for Octopus Deploy
 
-## What's included
+[Octopus](https://octopus.com) makes it easy to deliver software to Kubernetes, multi-cloud, on-prem infrastructure, and anywhere else. Automate the release, deployment, and operations of your software and AI workloads with a tool that can handle CD at scale in ways no other tool can.
 
-- **`octopus-deploy-agent`** — an agent that investigates the live state of your Octopus Server, traces configuration, and diagnoses deployment failures.
-- **Skills:**
-  - `octopus-deploy-knowledge` — the source of truth for how Octopus models projects, releases, lifecycles, environments, variables, runbooks, tenants, and spaces.
-  - `octopus-onboarding` — guides a first end-to-end Octopus setup, from connecting a repo to a first real deployment.
-  - `writing-ocl` — authoring Config-as-Code (`.ocl`) files.
-  - `diagnose-deployment-failure` — structured investigation of failed deployments.
-  - `octopus-audit-report` — generating audit reports from your instance.
-- **MCP server** — the [Octopus Deploy MCP server](https://github.com/OctopusDeploy/mcp-server), preconfigured in `.mcp.json`.
+This plugin combines the power of the [Octopus MCP Server](https://github.com/OctopusDeploy/mcp-server) and a specialized set of skills to enable [Claude Code](https://claude.com/claude-code) to interact with Octopus Deploy in an automated fashion.
 
-## Installation
+The MCP connects directly to your Octopus instance and can perform most actions that a regular user can:
+- Create projects and deployment processes
+- Create releases
+- Execute runbooks
+- Configure project variables
+- Find any interruptions requiring human attention
+- Inspect audit log
+- And much more
+
+The plugin comes with a set of skills to help with:
+- Connecting a repository to Octopus
+- Writing OCL ([Octopus Configuration Language](https://octopus.com/docs/projects/version-control/ocl-file-format))
+- Diagnosing deployment failures and fixing them
+- Producing an SOC2 audit report
+
+## Getting Started
 
 ### 1. Add the marketplace and install the plugin
 
@@ -26,7 +38,7 @@ In Claude Code:
 
 ### 2. Configure environment variables
 
-The plugin's MCP server needs these environment variables:
+The plugin's MCP server connects to your Octopus instance using these environment variables. We recommend setting up a separate [service account](https://octopus.com/docs/security/users-and-teams/service-accounts) with restricted permissions per Space.
 
 **Unix/Mac (bash/zsh):**
 ```bash
@@ -41,6 +53,14 @@ $env:OCTOPUS_API_KEY = "API-XXXXXXXXXXXXX"
 ```
 
 Restart Claude Code after setting them so the MCP server picks them up.
+
+## Examples
+
+Here is an example of what you can do with this plugin:
+- 📊 **Show me the deployment status of my project, and when it was last deployed to tenant X**
+- 🔍 **Investigate and diagnose why a deployment has failed**
+- 🔧 **Use the appropriate runbook to fix the failure**
+- 🚀 **Redeploy to tenant**
 
 ## Resources
 
