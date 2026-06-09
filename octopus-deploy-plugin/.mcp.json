@@ -1,15 +1,8 @@
 {
-  "octopusdeploy": {
+  "octopus-deploy-mcp": {
     "type": "stdio",
     "command": "npx",
-    "args": [
-      "-y",
-      "@octopusdeploy/mcp-server",
-      "--toolsets",
-      "all",
-      "--log-level",
-      "info"
-    ],
+    "args": ["-y", "@octopusdeploy/mcp-server"],
     "env": {
       "OCTOPUS_SERVER_URL": "${OCTOPUS_SERVER_URL}",
       "OCTOPUS_API_KEY": "${OCTOPUS_API_KEY}"

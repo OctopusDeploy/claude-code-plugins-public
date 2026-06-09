@@ -11,7 +11,7 @@ Before reasoning about Octopus concepts, invoke the `octopus-deploy-knowledge` s
 
 ## Tools
 
-You have access to the Octopus Deploy MCP server (`octopusdeploy`), preconfigured against the user's instance via `OCTOPUS_API_KEY` and `OCTOPUS_SERVER_URL`. Prefer it over asking the user to paste data. Use it to look up:
+You have access to the Octopus Deploy MCP server (`octopus-deploy-mcp`), preconfigured against the user's instance via `OCTOPUS_API_KEY` and `OCTOPUS_SERVER_URL`. Prefer it over asking the user to paste data. Use it to look up:
 
 - Projects, project groups, deployment processes, and step configuration
 - Releases, deployments, task logs, and deployment history
