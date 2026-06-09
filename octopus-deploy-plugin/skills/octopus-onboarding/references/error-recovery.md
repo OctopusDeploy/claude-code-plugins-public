@@ -41,10 +41,10 @@ When a Health task fails (`POST /api/tasks` with `Name: "Health"`), fetch `GET /
 
 The `execute` tool surfaces the upstream HTTP response. Treat it like a raw REST error — same diagnosis flow as above. The MCP layer doesn't reinterpret the response, it just transports it.
 
-If `execute` itself errors before reaching Octopus (e.g., "MCP write tools require `--no-read-only`"), the customer's MCP server is in read-only mode by default. They need to launch it with `--no-read-only` for write tools to work — direct them to that flag, don't try to work around it.
+If `execute` itself errors before reaching Octopus (e.g., "MCP write tools require `--no-read-only`"), the user's MCP server is in read-only mode by default. They need to launch it with `--no-read-only` for write tools to work — direct them to that flag, don't try to work around it.
 
 ## When the spec disagrees with reality
 
-If a property key works in the running Octopus instance but isn't in `octopus://api/llms.txt`, or vice versa: the running instance is authoritative for *behaviour*, the spec is authoritative for *contracts*. Usually this means the spec lags a recent server feature, or the customer's instance is older than the spec.
+If a property key works in the running Octopus instance but isn't in `octopus://api/llms.txt`, or vice versa: the running instance is authoritative for *behaviour*, the spec is authoritative for *contracts*. Usually this means the spec lags a recent server feature, or the user's instance is older than the spec.
 
 Cross-check with `octopus://api/capabilities` (MCP) — it reports the running version and the feature flags actually enabled. If a tool you expect requires a newer Octopus version (e.g., `get_kubernetes_live_status` needs 2025.3+), the capabilities resource will tell you, and you can fall through to a less-capable but more-portable equivalent.

@@ -1,8 +1,8 @@
 # Kubernetes agent install
 
-Companion reference for `SKILL.md` (`octopus-onboarding`), Step C and Step D. Use this when the customer is registering a Kubernetes target.
+Companion reference for `SKILL.md` (`octopus-onboarding`), Step C and Step D. Use this when the user is registering a Kubernetes target.
 
-The recommendation in `SKILL.md` is to default to the **Kubernetes agent** (`CommunicationStyle: "KubernetesTentacle"`) — a Helm-installed polling agent. This file walks through the install flow end-to-end. The legacy direct-API path (`CommunicationStyle: "Kubernetes"`) is at the bottom for completeness; it's only the right choice when the customer has an explicit reason (existing audited service account, regulatory constraint requiring Octopus-managed credentials).
+The recommendation in `SKILL.md` is to default to the **Kubernetes agent** (`CommunicationStyle: "KubernetesTentacle"`) — a Helm-installed polling agent. This file walks through the install flow end-to-end. The legacy direct-API path (`CommunicationStyle: "Kubernetes"`) is at the bottom for completeness; it's only the right choice when the user has an explicit reason (existing audited service account, regulatory constraint requiring Octopus-managed credentials).
 
 ## Why the agent wins
 
@@ -23,7 +23,7 @@ The agent pod needs to dial `agentReachableUrl` (from `SKILL.md` §0.1). Validat
 | Self-hosted Octopus behind a firewall + cloud cluster | **Stop and ask.** The user needs a tunnel (Cloudflare Tunnel, Tailscale, ngrok) or a public ingress first. Don't start the Helm install on an unreachable server. |
 | Octopus Cloud | Same URL for everything |
 
-Ask the customer:
+Ask the user:
 
 > *"Can the cluster reach `{agentReachableUrl}`? If you're not sure, run this from a shell with `kubectl` configured for the target cluster — a 200 or 401 means we're good; a timeout means we have a network problem to fix first."*
 
@@ -111,7 +111,7 @@ Only once the agent is `Healthy` do you proceed to feeds (`SKILL.md` §2) and pr
 
 ## Direct-API Kubernetes (legacy)
 
-Use `CommunicationStyle: "Kubernetes"` only when the customer specifically wants Octopus to hold cluster credentials. Tell them this path exists but the agent is preferred. If they still want it, here's the auth matrix.
+Use `CommunicationStyle: "Kubernetes"` only when the user specifically wants Octopus to hold cluster credentials. Tell them this path exists but the agent is preferred. If they still want it, here's the auth matrix.
 
 You'll need:
 

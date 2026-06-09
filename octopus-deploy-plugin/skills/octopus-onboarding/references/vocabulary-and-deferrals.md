@@ -20,7 +20,7 @@ Translate before using the Octopus term. Several Octopus words collide with conc
 
 ## What to defer / not do
 
-These are the most-cited frustrations from real customer onboarding sessions. Don't do any of them unless the user *explicitly* asks.
+These are the most-cited frustrations from real user onboarding sessions. Don't do any of them unless the user *explicitly* asks.
 
 - **Don't create a "Hello World" sample project.** Users want to see their real work running, not a demo.
 - **Don't run a guided product tour.** Same reason. The interactive walkthrough is for someone who's never seen Octopus and wants to browse — almost no one in an onboarding flow.
@@ -29,7 +29,7 @@ These are the most-cited frustrations from real customer onboarding sessions. Do
 - **Don't commit anything to the user's repo.** This includes `.octopus/` Config-as-Code skeletons, generated `values.yaml`, sample manifests, anything. If the user explicitly says "yes, commit it," fine. Otherwise output as a paste block.
 - **Don't create default variables, tag sets, or channels "for completeness."** Empty placeholder structures register as noise — users assume they're load-bearing and waste effort understanding why they exist.
 - **Don't auto-trigger the first deploy.** Show the deploy command and the UI link; let the user fire it. Users universally want this trigger pulled themselves so they can watch the logs scroll.
-- **Don't ask the user to type any Octopus ID by hand** (`Spaces-1`, `Projects-2`, `Environments-3`). Pick by display name; let the API resolve to the ID. Typed IDs are an error-prone and customer-hostile pattern.
+- **Don't ask the user to type any Octopus ID by hand** (`Spaces-1`, `Projects-2`, `Environments-3`). Pick by display name; let the API resolve to the ID. Typed IDs are an error-prone and user-hostile pattern.
 - **Don't use *tenant* / *space* / *channel* / *runbook* / *lifecycle* without grounding them in the user's domain first.** Lead with the translated word; the Octopus-native term comes after the user has the concept.
 - **Don't pre-configure rollback.** Users want to *understand* rollback mechanics — they don't want a rollback step set up unprompted, because it suggests the deploy is expected to fail.
 - **Don't create extra environments "just in case."** Dev / Staging / Prod is fine when the user wanted a multi-environment pipeline. A user who wants "just deploy" gets one environment, not three.

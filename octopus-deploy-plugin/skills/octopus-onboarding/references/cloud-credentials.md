@@ -132,7 +132,7 @@ Avoid suggesting `Contributor` at subscription level. If the user already has it
 | Artifact Registry / GCR | `roles/artifactregistry.reader` (or `.writer` if Octopus pushes) |
 | GCS | `roles/storage.objectAdmin` on the bucket |
 
-For service account JSON keys: scope them to a single service account with only the roles above. Encourage the customer to switch to Workload Identity Federation (GCP's OIDC equivalent) where possible.
+For service account JSON keys: scope them to a single service account with only the roles above. Encourage the user to switch to Workload Identity Federation (GCP's OIDC equivalent) where possible.
 
 ## Generic OIDC and tokens
 
@@ -155,6 +155,6 @@ For a freshly created account, this list should be empty. Show the user. It's th
 
 ## Cross-cutting hygiene
 
-- **Never paste a customer's actual key, ARN, secret, or service account JSON into chat.** Keep them in the `POST /accounts` body and in the user's secret store.
+- **Never paste a user's actual key, ARN, secret, or service account JSON into chat.** Keep them in the `POST /accounts` body and in the user's secret store.
 - **Don't reuse one account across "many things."** Octopus's account model is cheap — one account per cloud × per environment scope is fine and audits better.
-- **Surface rotation timeline** — IAM keys, SP secrets, GCP keys all have rotation expectations. Mention this when saving long-lived creds; it's a routine operational concern customers expect to be reminded of.
+- **Surface rotation timeline** — IAM keys, SP secrets, GCP keys all have rotation expectations. Mention this when saving long-lived creds; it's a routine operational concern users expect to be reminded of.
